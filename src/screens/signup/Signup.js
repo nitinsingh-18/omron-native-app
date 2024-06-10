@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import * as Yup from "yup";
 import {
   View,
   Text,
@@ -8,10 +9,36 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
+import { Formik } from "formik";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[0-9]{10}$/;
 const ACCOUNT_REGEX = /^[0-9]{8}$/;
+
+const signUpSchema = Yup.object().shape({
+  name: Yup.string()
+    .required("Name is required")
+    .min(3, "Name must be at least 3 characters long"),
+  email: Yup.string()
+    .matches(EMAIL_REGEX, "Invalid email address")
+    .required("Email is required"),
+  password: Yup.string()
+    .min(8, "Password must be at least 8 characters long")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/[0-9]/, "Password must contain at least one number")
+    .matches(/@$!%*?&#/, "Password must contain at least one special character")
+    .required("Password is required"),
+  accountNumber: Yup.string() // Adjust regex based on your account number format
+    .matches(ACCOUNT_REGEX, "Invalid account number")
+    .required("Account Number is required"),
+  phoneNumber: Yup.string() // Use string for phone number
+    .matches(
+      /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/,
+      "Invalid Phone Number"
+    )
+    .required("Phone Number is required"),
+});
 
 const SignUp = ({ navigation }) => {
   const [name, setName] = useState("");
@@ -19,95 +46,8 @@ const SignUp = ({ navigation }) => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [nameError, setNameError] = useState(null);
-  const [emailError, setEmailError] = useState(null);
-  const [phoneError, setPhoneError] = useState(null);
-  const [passwordError, setPasswordError] = useState(null);
-  const [accountError, setAccountError] = useState(null);
-
-  const handleNameChange = (text) => {
-    setName(text);
-    if (!text.trim()) {
-      setNameError("Name is required");
-    } else {
-      setNameError(null);
-    }
-  };
-
-  const handleEmailChange = (text) => {
-    setEmail(text);
-    if (!text.trim()) {
-      setEmailError("Email is required");
-    } else if (!EMAIL_REGEX.test(text)) {
-      setEmailError("Invalid email format");
-    } else {
-      setEmailError(null);
-    }
-  };
-
-  const handlePhoneChange = (text) => {
-    setPhone(text);
-    if (!text.trim()) {
-      setPhoneError("Phone number is required");
-    } else if (!PHONE_REGEX.test(text)) {
-      setPhoneError("Invalid phone number format");
-    } else {
-      setPhoneError(null);
-    }
-  };
-
-  const handlePasswordChange = (text) => {
-    setPassword(text);
-    if (!text.trim()) {
-      setPasswordError("Password is required");
-    } else if (text.length < 12 || text.length > 128) {
-      setPasswordError("Password must be between 12 to 128 characters");
-    } else {
-      setPasswordError(null);
-    }
-  };
-
-  const handleAccountNumberChange = (text) => {
-    setAccountNumber(text);
-    if (!text.trim()) {
-      setAccountError("Account number is required");
-    } else if (!ACCOUNT_REGEX.test(text)) {
-      setAccountError("Invalid account number format (8 digits)");
-    } else {
-      setAccountError(null);
-    }
-  };
 
   const handleSignUp = () => {
-    if (
-      nameError ||
-      emailError ||
-      phoneError ||
-      passwordError ||
-      accountError
-    ) {
-      return;
-    }
-    if (!name) {
-      setNameError("Name is required");
-      return;
-    }
-    if (!email) {
-      setEmailError("Email is required");
-      return;
-    }
-    if (!phone) {
-      setPhoneError("Phone Number is required");
-      return;
-    }
-    if (!password) {
-      setPasswordError("Password is required");
-      return;
-    }
-    if (!accountNumber) {
-      setAccountError("Account Number is required");
-      return;
-    }
     navigation.navigate("Login");
   };
 
@@ -115,68 +55,114 @@ const SignUp = ({ navigation }) => {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.box}>
         <Text style={styles.title}>Sign Up</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            value={name}
-            onChangeText={handleNameChange}
-          />
-          {nameError && <Text style={styles.errorText}>{nameError}</Text>}
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={handleEmailChange}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            textContentType="emailAddress"
-          />
-          {emailError && <Text style={styles.errorText}>{emailError}</Text>}
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            value={phone}
-            onChangeText={handlePhoneChange}
-            keyboardType="phone-pad"
-          />
-          {phoneError && <Text style={styles.errorText}>{phoneError}</Text>}
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={handlePasswordChange}
-            secureTextEntry={true}
-            textContentType="password"
-          />
-          {passwordError && (
-            <Text style={styles.errorText}>{passwordError}</Text>
+        <Formik
+          initialValues={{
+            email: "",
+            name: "",
+            password: "",
+            phoneNumber: "",
+            accountNumber: "",
+          }}
+          validationSchema={signUpSchema}
+          onSubmit={(values) => loginHandler(values)}
+        >
+          {({
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            values,
+            errors,
+            touched,
+            isSubmitting,
+          }) => (
+            <View style={styles.mainView}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  id="name"
+                  name="name"
+                  placeholder="Name"
+                  onBlur={handleBlur("name")}
+                  value={values.name}
+                  onChangeText={handleChange("name")}
+                  style={styles.input}
+                />
+                {touched.name && errors.name && (
+                  <Text style={styles.errorText}>{errors.name}</Text>
+                )}
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  id="email"
+                  name="email"
+                  placeholder="Email"
+                  keyboardType="email"
+                  onBlur={handleBlur("email")}
+                  value={values.email}
+                  onChangeText={handleChange("email")}
+                  style={styles.input}
+                />
+                {touched.email && errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  placeholder="Phone Number"
+                  keyboardType="Phone Number"
+                  onBlur={handleBlur("phoneNumber")}
+                  value={values.phoneNumber}
+                  onChangeText={handleChange("phoneNumber")}
+                  style={styles.input}
+                />
+                {touched.phoneNumber && errors.phoneNumber && (
+                  <Text style={styles.errorText}>{errors.phoneNumber}</Text>
+                )}
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  id="password"
+                  name="password"
+                  placeholder="Password"
+                  keyboardType="Password"
+                  onBlur={handleBlur("password")}
+                  value={values.password}
+                  onChangeText={handleChange("password")}
+                  style={styles.input}
+                />
+                {touched.password && errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  id="accountNumber"
+                  name="accountNumber"
+                  placeholder="Account Number"
+                  keyboardType="Account Number"
+                  onBlur={handleBlur("accountNumber")}
+                  value={values.accountNumber}
+                  onChangeText={handleChange("accountNumber")}
+                  style={styles.input}
+                />
+                {touched.accountNumber && errors.accountNumber && (
+                  <Text style={styles.errorText}>{errors.accountNumber}</Text>
+                )}
+              </View>
+              <View style={styles.signupButton}>
+                <Button title="Sign Up" onPress={handleSignUp} />
+              </View>
+              <View>
+                <Pressable onPress={() => navigation.navigate("Login")}>
+                  <Text style={styles.link}>
+                    Already have an account? Login
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           )}
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Account Number"
-            value={accountNumber}
-            onChangeText={handleAccountNumberChange}
-            keyboardType="numeric"
-          />
-          {accountError && <Text style={styles.errorText}>{accountError}</Text>}
-        </View>
-        <View style={styles.signupButton}>
-          <Button title="Sign Up" onPress={handleSignUp} />
-        </View>
-        <View>
-          <Pressable onPress={() => navigation.navigate("Login")}>
-            <Text style={styles.link}>Already have an account? Login</Text>
-          </Pressable>
-        </View>
+        </Formik>
       </View>
     </ScrollView>
   );
@@ -198,6 +184,11 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     margin: 25,
   },
+  mainView: {
+    color: "black",
+    flexDirection: "column",
+    gap: 6,
+  },
   title: {
     fontSize: 24,
     marginBottom: 20,
@@ -214,7 +205,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
-    fontSize: 12,
+    fontSize: 11,
     position: "absolute",
     top: 40,
   },
