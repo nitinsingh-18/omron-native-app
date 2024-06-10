@@ -86,8 +86,16 @@ const Login = ({ navigation }) => {
               {touched.password && errors.password && (
                 <Text style={styles.errorText}>{errors.password}</Text>
               )}
+
               <View style={styles.loginButton}>
                 <Button title="Login" onPress={handleSubmit} />
+              </View>
+              <View>
+                <Pressable
+                  onPress={() => navigation.navigate("ForgotPassword")}
+                >
+                  <Text>Forgot Password?</Text>
+                </Pressable>
               </View>
               <View>
                 <Pressable onPress={() => navigation.navigate("Signup")}>

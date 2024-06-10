@@ -41,12 +41,6 @@ const signUpSchema = Yup.object().shape({
 });
 
 const SignUp = ({ navigation }) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-
   const handleSignUp = () => {
     navigation.navigate("Login");
   };
@@ -151,7 +145,7 @@ const SignUp = ({ navigation }) => {
                 )}
               </View>
               <View style={styles.signupButton}>
-                <Button title="Sign Up" onPress={handleSignUp} />
+                <Button title="Sign Up" onPress={handleSubmit} />
               </View>
               <View>
                 <Pressable onPress={() => navigation.navigate("Login")}>
